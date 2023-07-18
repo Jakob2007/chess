@@ -276,7 +276,7 @@ def main():
 		pg.display.flip()
 		clock.tick(24)
 	
-
+# cd /Users/Jakob/Documents/C++/chess
 # g++ -o chess -w -O3 ./main.cpp; ./chess
 # g++ -o chess -w -O3 ./main.cpp; python3.10 /Users/Jakob/Documents/C++/chess/show_chess.py
 
