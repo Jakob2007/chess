@@ -67,20 +67,38 @@ void test_fen(Board b, std::string fen, int* exp_moves) {
 int main() {
 	Board main_board;
 
-	main_board.from_fen("8/8/8/k2r4/8/1b3Q2/8/5K2 w - - 0 1");
 	main_board.from_fen(BASIC_FEN);
+	main_board.from_fen("r1bqk2r/pppp1ppp/2n2n2/4p3/1b2P3/2NP4/PPP2PPP/R1BQKBNR w - - 0 1");
 
+	// main_board.show();
+
+	// std::cout << main_board.evaluate();
+
+	
+	int moves[10] = {0};
+	int eval;
+	for (int i=0; i<10; i++) {
+		Start_time
+		std::cout << i << ' ';
+		eval = main_board.get_best_move_with_hist(i, moves);
+		for (int j=0; j<10; j++) std::cout << main_board.i_to_sq(moves[j]>>6) << main_board.i_to_sq(moves[j]&63) << '-';
+		std::cout << eval << End_time << std::endl;
+	}
+	
+	
+
+	/*
 	int move = 0;
 	int eval;
-
 	for (int i=0; i<10; i++) {
 		Start_time
 		std::cout << i << ' ';
 		eval = main_board.get_best_move(i, -WORST_CASE, WORST_CASE, &move);
 		std::cout << main_board.i_to_sq(move>>6) << main_board.i_to_sq(move&63) << ' ';
-		//for (int j=0; j<10; j++) std::cout << Board::i_to_sq(moves[j]>>6) << Board::i_to_sq(moves[j]&63) << '-';
+		for (int j=0; j<10; j++) std::cout << main_board.i_to_sq(moves[j]>>6) << main_board.i_to_sq(moves[j]&63) << '-';
 		std::cout << eval << End_time << std::endl;
 	}
+	*/
 
 	/* raw
 	0 f3d5 995( 80942ns x11011 )

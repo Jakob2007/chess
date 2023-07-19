@@ -544,26 +544,22 @@ void Board::do_move(Sq sq1, Sq sq2) {
 int Board::evaluate() {
 	int piece_eval = 0;
 	int position_eval = 0;
-	const int value[N_PIECES] = {1,5,3,4,999,9};
+	const int value[N_PIECES] = {1,5,3,3,999,9};
 
-	if (is_whites_turn) {
-		for (int i=0; i<BOARD_SIZE; i++) {
-			Piece p = board[i];
-			if (!p) continue;
+	for (int i=0; i<BOARD_SIZE; i++) {
+		Piece p = board[i];
+		if (!p) continue;
+		if (p > 0) {
 			piece_eval+= value[p];
-			position_eval+= SQUARE_TABLES[p-1][i];
+			position_eval+= SQUARE_TABLES[p-1][63-i];
 		}
-	}
-	else {
-		for (int i=0; i<BOARD_SIZE; i++) {
-			Piece p = -board[i];
-			if (!p) continue;
-			piece_eval-= value[p];
-			position_eval-= SQUARE_TABLES[p-1][mirror_sq(i)];
+		else {
+			piece_eval-= value[-p];
+			position_eval-= SQUARE_TABLES[(-p)-1][mirror_sq(63-i)];
 		}
 	}
 
-	return piece_eval;
+	return piece_eval + position_eval;
 }
 
 int Board::get_best_move_with_hist(int depth, int* root_move_hist) {

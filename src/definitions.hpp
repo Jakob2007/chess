@@ -30,7 +30,7 @@
 #define get_move_from_sqs(sq1, sq2) (sq1 << 6) | sq2;
 
 #define Start_time auto start_time = std::chrono::high_resolution_clock::now();
-#define End_time "( " + std::to_string( std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - start_time).count() ) + "ns x" + std::to_string((int)((float)1000000000 / std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - start_time).count())) + " )"
+#define End_time "( " + std::to_string( std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start_time).count() ) + "ms x" + std::to_string((int)((float)1000000000 / std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - start_time).count())) + " )"
 #define BASIC_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 #define HEY std::cout << "hey" << std::endl;
 
