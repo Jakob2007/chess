@@ -5,6 +5,8 @@ start.dSYM/
 
 chess
 
+obj/
+
 comparison.py
 
 test.cpp

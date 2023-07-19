@@ -1,15 +1,18 @@
 #include <chrono>
 
+#ifndef definitions_h
+#define definitions_h
+
 #define PAWN 1
 #define ROOK 2
-#define NIGHT 3
+#define KNIGHT 3
 #define BISHOP 4
 #define QUEEN 5
 #define KING 6
 
 #define PAWN_INDEX PAWN-1
 #define ROOK_INDEX ROOK-1
-#define NIGHT_INDEX NIGHT-1
+#define KNIGHT_INDEX KNIGHT-1
 #define BISHOP_INDEX BISHOP-1
 #define QUEEN_INDEX QUEEN-1
 #define KING_INDEX KING-1
@@ -31,5 +34,9 @@
 #define BASIC_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 #define HEY std::cout << "hey" << std::endl;
 
-#define COUNTER call_count++; std::cout << "call count: " << call_count << std::endl;
-int call_count = 0;
+typedef std::pair<int, int> Pos;
+typedef uint8_t Sq;
+typedef int8_t Piece;
+typedef int8_t Small_num;
+
+#endif

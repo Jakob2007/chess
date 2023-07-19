@@ -1,24 +1,24 @@
 #include <iostream>
 
-#include <definitions.hpp>
-#include <board.hpp>
+#include "definitions.hpp"
+#include "board.hpp"
 
-void show_timed_move(Board board, Board::Sq sq) {
+void show_timed_move(Board board, Sq sq) {
 	Start_time
 	
-	Board::Sq moves[MAX_MOVES];
+	Sq moves[MAX_MOVES];
 	board.legal_moves_from(sq, moves, board.board[sq] > 0 ? 1 : -1);
 	
 	std::cout << "move check" << End_time;
 	
 	std::cout << ' ' << (int)sq << '[' << board.piece_names[board.board[sq] * (board.board[sq] > 0 ? 1 : -1) - 1]  << "] -> ";
 
-	for (Board::Sq i=0; i<MAX_MOVES; i++) {
+	for (Sq i=0; i<MAX_MOVES; i++) {
 		if (moves[i] == LIST_END) {
 			std::cout << "-";
 			break;
 		}
-		std::cout << Board::pair_to_sq(Board::i_to_pair(moves[i])) << ' ' << (int)moves[i] << ' ';
+		std::cout << board.pair_to_sq(board.i_to_pair(moves[i])) << ' ' << (int)moves[i] << ' ';
 	}
 	std::cout << std::endl;
 }
@@ -53,7 +53,7 @@ void test_fen(Board b, std::string fen, int* exp_moves) {
 			for (int i=0; i<count+1; i++) {
 				int first = moves[i] >> 6;
 				int second = moves[i] & 63;
-				std::cout << Board::i_to_sq(first) << Board::i_to_sq(second) << ", ";
+				std::cout << b.i_to_sq(first) << b.i_to_sq(second) << ", ";
 			}
 			break;
 		}
@@ -68,7 +68,7 @@ int main() {
 	Board main_board;
 
 	main_board.from_fen("8/8/8/k2r4/8/1b3Q2/8/5K2 w - - 0 1");
-	// main_board.from_fen(BASIC_FEN);
+	main_board.from_fen(BASIC_FEN);
 
 	int move = 0;
 	int eval;
@@ -77,7 +77,7 @@ int main() {
 		Start_time
 		std::cout << i << ' ';
 		eval = main_board.get_best_move(i, -WORST_CASE, WORST_CASE, &move);
-		std::cout << Board::i_to_sq(move>>6) << Board::i_to_sq(move&63) << ' ';
+		std::cout << main_board.i_to_sq(move>>6) << main_board.i_to_sq(move&63) << ' ';
 		//for (int j=0; j<10; j++) std::cout << Board::i_to_sq(moves[j]>>6) << Board::i_to_sq(moves[j]&63) << '-';
 		std::cout << eval << End_time << std::endl;
 	}

@@ -281,4 +281,9 @@ def main():
 # g++ -o chess -w -O3 ./main.cpp; python3.10 /Users/Jakob/Documents/C++/chess/show_chess.py
 
 if __name__ == "__main__":
-	main()
+	#main()
+	print(sq_to_i("e1"))
+	ROW_SIZE = 8
+	index = sq_to_i("e8")
+	print(index % ROW_SIZE + int(7 - index / ROW_SIZE) * ROW_SIZE)
+	print(i_to_sq( int(index % ROW_SIZE + (index / ROW_SIZE + ROW_SIZE-1) % ROW_SIZE * ROW_SIZE) ))
