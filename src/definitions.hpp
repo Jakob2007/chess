@@ -1,7 +1,10 @@
-#include <chrono>
 
 #ifndef definitions_h
 #define definitions_h
+
+#include <chrono>
+
+#define KI_DEPTH 5
 
 #define PAWN 1
 #define ROOK 2
@@ -24,7 +27,7 @@
 #define MAX_MOVES_BOARD 219
 #define INTERRUPT_VAL 99
 #define LIST_END UINT8_MAX
-#define WORST_CASE 9999
+#define WORST_CASE -9999
 
 #define get_sqs_from_move(move) move >> 6, move & 63
 #define get_move_from_sqs(sq1, sq2) (sq1 << 6) | sq2;
@@ -38,5 +41,6 @@ typedef std::pair<int, int> Pos;
 typedef uint8_t Sq;
 typedef int8_t Piece;
 typedef int8_t Small_num;
+typedef int Move;
 
 #endif

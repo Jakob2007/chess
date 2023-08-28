@@ -1,27 +1,11 @@
 #include <iostream>
 #include <math.h>
+#include <random>
 
-#include "definitions.hpp"
 #include "square_tables.hpp"
+#include "definitions.hpp"
+#include "openings.hpp"
 #include "board.hpp"
-
-Board Board::copy() {
-	Board b;
-	for (int i=0; i<BOARD_SIZE; i++) {
-		b.board[i] = board[i];
-		b.pins[i][0] = pins[i][0];
-		b.pins[i][1] = pins[i][1];
-	}
-	for (int i=0; i<ROW_SIZE-1; i++) b.check_preventing[i] = check_preventing[i];
-	for (int i=0; i<4; i++) b.possible_castles[i] = possible_castles[i];
-
-	b.is_whites_turn = is_whites_turn;
-	b.full_move_count = full_move_count;
-	b.enpassant = enpassant;
-	b.white_king = white_king;
-	b.black_king = black_king;
-	return b;
-}
 
 void Board::from_fen(std::string fen) {
 	for (Sq i=0; i<BOARD_SIZE; i++) {
@@ -118,6 +102,32 @@ void Board::from_fen(std::string fen) {
 		}
 	} 
 	else check_preventing[0] = LIST_END;
+}
+
+Board::Board() {
+	// do nothing
+}
+
+Board::Board(std::string fen) {
+	from_fen(fen);
+}
+
+Board Board::copy() {
+	Board b;
+	for (Sq i=0; i<BOARD_SIZE; i++) {
+		b.board[i] = board[i];
+		b.pins[i][0] = pins[i][0];
+		b.pins[i][1] = pins[i][1];
+	}
+	for (Small_num i=0; i<ROW_SIZE-1; i++) b.check_preventing[i] = check_preventing[i];
+	for (Small_num i=0; i<4; i++) b.possible_castles[i] = possible_castles[i];
+
+	b.is_whites_turn = is_whites_turn;
+	b.full_move_count = full_move_count;
+	b.enpassant = enpassant;
+	b.white_king = white_king;
+	b.black_king = black_king;
+	return b;
 }
 
 void Board::try_step(Pos pos, const Small_num* pattern, Sq* moves, Sq* index, Sq* captcha, Small_num is_white, bool continues) {
@@ -341,7 +351,6 @@ int Board::legal_moves_from(Sq sq, Sq* dest, Small_num is_white) {
 		dest[0] = LIST_END;
 		return 0;
 	}
-	
 
 	// pawn moves
 	if (piece == PAWN) {
@@ -439,10 +448,10 @@ int Board::legal_moves_from(Sq sq, Sq* dest, Small_num is_white) {
 	return index;
 }
 
-int Board::all_legal_moves(int* dest, Small_num is_white) {
+int Board::all_legal_moves(Move* dest, Small_num is_white) {
 	int index = 0;
 	Sq moves[MAX_MOVES] = {};
-	for (int i=0; i<BOARD_SIZE; i++) {
+	for (Sq i=0; i<BOARD_SIZE; i++) {
 		int new_index = legal_moves_from(i, moves, is_white);
 		for (int j=0; j<new_index; j++) {
 			if (moves[j] == INTERRUPT_VAL) continue; // move is not check preventing
@@ -479,7 +488,6 @@ void Board::do_move(Sq sq1, Sq sq2) {
 	Sq index = pair_to_i(pos);
 	is_under_attack(index, -is_white, check_pat);
 	if (check_pat[0] != INTERRUPT_VAL) {
-		// std::cout << "check ";
 		if (is_under_attack_reverse_check(index, -is_white, check_pat)) check_preventing[0] = INTERRUPT_VAL; // check for double check (cant intercept with other piece)
 		else {
 			for (Small_num i=0; i<7; i++) {
@@ -495,10 +503,6 @@ void Board::do_move(Sq sq1, Sq sq2) {
 		}
 	} 
 	else check_preventing[0] = LIST_END;
-	// for (Small_num i=0; i<7; i++) {
-	// 	if (check_preventing[i] == LIST_END) break;
-	// 	std::cout << i_to_sq(check_preventing[i]) << "c ";
-	// }
 	
 	// check castle
 	if (sq1 == 0 || sq2 == 0) possible_castles[0] = false; // king side w
@@ -536,34 +540,120 @@ void Board::do_move(Sq sq1, Sq sq2) {
 		else black_king = i_to_pair(sq2);
 	}
 	check_pins();
-	// for (Sq i=0; i<BOARD_SIZE; i++) {
-	// 	if (pins[i][0] || pins[i][1]) std::cout << i_to_sq(i) << "p ";
-	// }
+}
+
+void Board::do_move(Sq sq1, Sq sq2, Openings* op) {
+
+	op->push_move(sq1, sq2);
+
+	Small_num is_white = is_whites_turn ? 1 : -1;
+	is_whites_turn = !is_whites_turn;
+	if (is_whites_turn) full_move_count++;
+	Piece piece = board[sq1];
+
+	// do move
+	board[sq1] = 0;
+	board[sq2] = piece;
+
+	if (piece * is_white == PAWN) {
+		// update enpassant
+		if (sq2 == sq1 + is_white*8*2) enpassant = sq1 + is_white*8;
+		else enpassant = LIST_END;
+		// check promotion
+		if (sq2/8 == 7 * !is_whites_turn) board[sq2] = QUEEN * is_white;
+	}
+
+	// check check
+	Pos pos = is_whites_turn ? white_king : black_king;
+	Small_num check_pat[2] = {0};
+	Sq index = pair_to_i(pos);
+	is_under_attack(index, -is_white, check_pat);
+	if (check_pat[0] != INTERRUPT_VAL) {
+		std::cout << "check ";
+		if (is_under_attack_reverse_check(index, -is_white, check_pat)) check_preventing[0] = INTERRUPT_VAL; // check for double check (cant intercept with other piece)
+		else {
+			for (Small_num i=0; i<7; i++) {
+				pos.first+= check_pat[0];
+				pos.second+= check_pat[1];
+				check_preventing[i] = pair_to_i(pos);
+				if (board[check_preventing[i]] && i != 6) {
+					check_preventing[i+1] = LIST_END;
+					break;
+				}
+				if (check_preventing[i] == LIST_END) break;
+			}
+		}
+	} 
+	else check_preventing[0] = LIST_END;
+	for (Small_num i=0; i<7; i++) {
+		if (check_preventing[i] == LIST_END) break;
+		std::cout << i_to_sq(check_preventing[i]) << "c ";
+	}
+	
+	// check castle
+	if (sq1 == 0 || sq2 == 0) possible_castles[0] = false; // king side w
+	else if (sq1 == 7 || sq2 == 7) possible_castles[1] = false; // queen side w
+	else if (sq1 == 56 || sq2 == 56) possible_castles[2] = false; // king side b
+	else if (sq1 == 63 || sq2 == 63) possible_castles[3] = false; // queen side b
+	else if (sq1 == 3) { // w king
+		possible_castles[0] = false;
+		possible_castles[1] = false;
+		if (sq2 == 1) { // perf castle
+			board[0] = 0;
+			board[2] = ROOK;
+		}
+		else if (sq2 == 5) {
+			board[7] = 0;
+			board[4] = ROOK;
+		}
+	}
+	else if (sq1 == 59) { // w king
+		possible_castles[2] = false;
+		possible_castles[3] = false;
+		if (sq2 == 57) { // perf castle
+			board[56] = 0;
+			board[58] = -ROOK;
+		}
+		else if (sq2 == 61) {
+			board[63] = 0;
+			board[60] = -ROOK;
+		}
+	}
+	
+	// update pins
+	if (piece * is_white == KING) {
+		if (piece == KING) white_king = i_to_pair(sq2);
+		else black_king = i_to_pair(sq2);
+	}
+	check_pins();
+	for (Sq i=0; i<BOARD_SIZE; i++) {
+		if (pins[i][0] || pins[i][1]) std::cout << i_to_sq(i) << "p ";
+	}
 }
 
 int Board::evaluate() {
 	int piece_eval = 0;
 	int position_eval = 0;
-	const int value[N_PIECES] = {1,5,3,3,999,9};
+	const int value[N_PIECES] = {1,5,3,3,9,999};
 
 	for (int i=0; i<BOARD_SIZE; i++) {
 		Piece p = board[i];
 		if (!p) continue;
 		if (p > 0) {
-			piece_eval+= value[p];
+			piece_eval+= value[p-1];
 			position_eval+= SQUARE_TABLES[p-1][63-i];
 		}
 		else {
-			piece_eval-= value[-p];
+			piece_eval-= value[(-p)-1];
 			position_eval-= SQUARE_TABLES[(-p)-1][mirror_sq(63-i)];
 		}
 	}
 
-	return piece_eval + position_eval;
+	return piece_eval * 40 + position_eval;
 }
 
-int Board::get_best_move_with_hist(int depth, int* root_move_hist) {
-	int moves[MAX_MOVES_BOARD] = {0};
+int Board::get_best_move_with_hist(int depth, Move* root_move_hist) {
+	Move moves[MAX_MOVES_BOARD] = {0};
 
 	int move_count = all_legal_moves(moves, is_whites_turn ? 1 : -1);
 
@@ -574,7 +664,7 @@ int Board::get_best_move_with_hist(int depth, int* root_move_hist) {
 			new_board.do_move(get_sqs_from_move(moves[i]));
 			int val;
 			
-			int* move_hist = (int*)calloc(depth + 1, sizeof(int));
+			Move* move_hist = (Move*)calloc(depth + 1, sizeof(Move));
 			if (depth > 0) val = new_board.get_best_move_with_hist(depth-1, move_hist) - 1;
 			else val = new_board.evaluate();
 			
@@ -597,7 +687,7 @@ int Board::get_best_move_with_hist(int depth, int* root_move_hist) {
 			new_board.do_move(get_sqs_from_move(moves[i]));
 			int val;
 			
-			int* move_hist = (int*)calloc(depth + 1, sizeof(int));
+			Move* move_hist = (Move*)calloc(depth + 1, sizeof(Move));
 			if (depth > 0) val = new_board.get_best_move_with_hist(depth-1, move_hist) - 1;
 			else val = new_board.evaluate();
 			
@@ -615,24 +705,98 @@ int Board::get_best_move_with_hist(int depth, int* root_move_hist) {
 	}
 }
 
-int Board::get_best_move(int depth, int alpha, int beta, int* move) {
-	int moves[MAX_MOVES_BOARD] = {0};
+int Board::minimax(int depth, int alpha, int beta) {	
+	Move moves[MAX_MOVES_BOARD] = {0};
 
+	int move_count = all_legal_moves(moves, is_whites_turn ? 1 : -1);
+	if (!move_count) {
+		if (check_preventing[0] == LIST_END) return 0;
+		else return is_whites_turn ? WORST_CASE : -WORST_CASE;
+	}
+
+	if (is_whites_turn) {
+		int best_val = WORST_CASE;
+		for (int i=0; i<move_count; i++) {
+			Board new_board = copy();
+			new_board.do_move(get_sqs_from_move(moves[i]));
+
+			int val;
+			if (depth > 0) val = new_board.minimax(depth-1, alpha, beta) - 1;
+			else val = new_board.evaluate();
+
+			if (val > best_val) {
+				best_val = val;
+			}
+
+			alpha = std::max(alpha, best_val);
+			if (alpha >= beta) {
+				// Prune the search tree.
+				break;
+			}
+		}
+		return best_val;
+	}
+	else {
+		int best_val = -WORST_CASE;
+		for (int i=0; i<move_count; i++) {
+			Board new_board = copy();
+			new_board.do_move(get_sqs_from_move(moves[i]));
+
+			int val;
+			if (depth > 0) val = new_board.minimax(depth-1, alpha, beta) + 1;
+			else val = new_board.evaluate();
+
+			if (val < best_val) {
+				best_val = val;
+			}
+
+			beta = std::min(beta, best_val);
+			if (alpha >= beta) {
+				// Prune the search tree.
+				break;
+			}
+		}
+		return best_val;
+	}
+}
+
+Move Board::get_best_move(int depth, Openings* op) {
+	int alpha = WORST_CASE;
+	int beta = -WORST_CASE;
+
+	if (op->current_move_node != nullptr) {
+		Sq move[2] = {0};
+		std::string name;
+		op->next_move(move, &name);
+		return get_move_from_sqs(move[0], move[1]);
+	}
+
+	// Seed the random number generator with a time-based seed
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<int> distribution(0, 1);
+	
+	Move moves[MAX_MOVES_BOARD] = {0};
 	int move_count = all_legal_moves(moves, is_whites_turn ? 1 : -1);
 
 	int best_move_index = -1;
 
 	if (is_whites_turn) {
-		int best_val = -WORST_CASE;
+		int best_val = WORST_CASE;
 		for (int i=0; i<move_count; i++) {
 			Board new_board = copy();
 			new_board.do_move(get_sqs_from_move(moves[i]));
+
 			int val;
-			if (depth > 0) val = new_board.get_best_move(depth-1, alpha, beta, move) - 1;
+			if (depth > 0) val = new_board.minimax(depth-1, alpha, beta) - 1;
 			else val = new_board.evaluate();
 
 			if (val > best_val) {
 				best_val = val;
+				best_move_index = i;
+			}
+			if (val == best_val & distribution(gen)) {
+				// 50/50 if move equal to prev best
 				best_move_index = i;
 			}
 
@@ -642,20 +806,24 @@ int Board::get_best_move(int depth, int alpha, int beta, int* move) {
 				break;
 			}
 		}
-		*move = moves[best_move_index];
-		return best_val;
+		return moves[best_move_index];
 	}
 	else {
-		int best_val = WORST_CASE;
+		int best_val = -WORST_CASE;
 		for (int i=0; i<move_count; i++) {
 			Board new_board = copy();
 			new_board.do_move(get_sqs_from_move(moves[i]));
+
 			int val;
-			if (depth > 0) val = new_board.get_best_move(depth-1, alpha, beta, move) + 1;
+			if (depth > 0) val = new_board.minimax(depth-1, alpha, beta) + 1;
 			else val = new_board.evaluate();
 
 			if (val < best_val) {
 				best_val = val;
+				best_move_index = i;
+			}
+			if (val == best_val & distribution(gen)) {
+				// 50/50 if move equal to prev best
 				best_move_index = i;
 			}
 
@@ -665,8 +833,7 @@ int Board::get_best_move(int depth, int alpha, int beta, int* move) {
 				break;
 			}
 		}
-		*move = moves[best_move_index];
-		return best_val;
+		return moves[best_move_index];
 	}
 }
 
@@ -706,7 +873,7 @@ void Board::show() {
 	std::cout << ' ' << full_move_count << std::endl;
 }
 
-void Board::vsboard_loop() {
+void Board::vsboard_loop(Openings* op) {
 	std::cout << "rdy" << std::endl;
 
 	std::string data;
@@ -735,7 +902,7 @@ void Board::vsboard_loop() {
 			std::cout << std::endl;
 		}
 		else if (head == "act") {
-			do_move(sq_to_i(body.substr(0, 2)), sq_to_i(body.substr(2, 2)));
+			do_move(sq_to_i(body.substr(0, 2)), sq_to_i(body.substr(2, 2)), op);
 			int moves[MAX_MOVES_BOARD];
 			int p_moves = all_legal_moves(moves, is_whites_turn ? 1 : -1);
 			if (p_moves == 0) {
@@ -749,14 +916,15 @@ void Board::vsboard_loop() {
 			for (Sq i=0; i<BOARD_SIZE; i++) {
 				std::cout << (int)board[i] << ' ';
 			}
-			std::cout << full_move_count << ' ' << (is_whites_turn ? 1 : -1) << std::endl;
+			if (op->current_move_node) std::cout << op->current_move_node->current_name << ' ';
+			else std::cout << evaluate() << ' ';
+			std::cout << full_move_count << ' ' << (is_whites_turn ? 1 : -1);
+			std::cout << std::endl;
 		}
 		else if (head == "kim") {
-			int move = 0;
-			int eval = get_best_move(2, -WORST_CASE, WORST_CASE, &move);
-			// std::cout << i_to_sq(move>>6) << i_to_sq(move&63) << '-' << evaluate() - eval <<  ' ';
-			std::cout << i_to_sq(move>>6) << i_to_sq(move&63) << eval <<  ' ';
-			do_move(get_sqs_from_move(move));
+			int move = get_best_move(KI_DEPTH, op);
+			do_move(get_sqs_from_move(move), op);
+			std::cout << i_to_sq(move>>6) << i_to_sq(move&63) <<  ' ';
 			std::cout << "ok" << std::endl;
 		}
 		else {

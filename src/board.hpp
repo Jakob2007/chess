@@ -3,7 +3,36 @@
 #define Board_h
 
 #include <iostream>
+
 #include "definitions.hpp"
+#include "openings.hpp"
+
+inline Pos i_to_pair(Sq index) {
+	return std::make_pair(index % ROW_SIZE, index / ROW_SIZE);
+}
+
+inline Sq pair_to_i(const Pos& pos) {
+	if (pos.first < 0 || pos.second < 0 || pos.first >= ROW_SIZE || pos.second >= ROW_SIZE) {
+		return LIST_END;
+	}
+	return pos.first + pos.second * ROW_SIZE;
+}
+
+inline std::string pair_to_sq(Pos pair) {
+	return std::string(1, 'a' + (7 - pair.first)) + (char)('1' + pair.second);
+}
+
+inline Pos sq_to_pair(std::string str) {
+	return std::make_pair(7 - (str.at(0) - 'a'), str.at(1) - '1');
+}
+
+inline Sq sq_to_i(std::string sq) {
+	return pair_to_i(sq_to_pair(sq));
+}
+
+inline std::string i_to_sq(Sq i) {
+	return pair_to_sq(i_to_pair(i));
+}
 
 struct Board {
 	Piece board[BOARD_SIZE];
@@ -30,36 +59,13 @@ struct Board {
 
 	const char piece_names[N_PIECES] = {'p','r','n','b','q','k'};
 
-	inline Pos i_to_pair(Sq index) {
-		return std::make_pair(index % ROW_SIZE, index / ROW_SIZE);
-	}
+	void from_fen(std::string fen);
 
-	inline Sq pair_to_i(const Pos& pos) {
-		if (pos.first < 0 || pos.second < 0 || pos.first >= ROW_SIZE || pos.second >= ROW_SIZE) {
-			return LIST_END;
-		}
-		return pos.first + pos.second * ROW_SIZE;
-	}
+	Board();
 
-	inline std::string pair_to_sq(Pos pair) {
-		return std::string(1, 'a' + (7 - pair.first)) + (char)('1' + pair.second);
-	}
-
-	inline Pos sq_to_pair(std::string str) {
-		return std::make_pair(7 - (str.at(0) - 'a'), str.at(1) - '1');
-	}
-
-	inline Sq sq_to_i(std::string sq) {
-		return pair_to_i(sq_to_pair(sq));
-	}
-
-	inline std::string i_to_sq(Sq i) {
-		return pair_to_sq(i_to_pair(i));
-	}
+	Board(std::string fen);
 
 	Board copy();
-
-	void from_fen(std::string fen);
 
 	void try_step(Pos pos, const Small_num* pattern, Sq* moves, Sq* index, Sq* captcha, Small_num is_white, bool continues);
 	
@@ -79,15 +85,19 @@ struct Board {
 
 	void do_move(Sq sq1, Sq sq2);
 
+	void do_move(Sq sq1, Sq sq2, Openings* op);
+
 	int evaluate();
 
 	int get_best_move_with_hist(int depth, int* root_move_hist);
 
-	int get_best_move(int depth, int alpha, int beta, int* move);
+	int minimax(int depth, int alpha, int beta);
+
+	int get_best_move(int depth, Openings* op);
 
 	void show();
 
-	void vsboard_loop();
+	void vsboard_loop(Openings* op);
 };
 
 

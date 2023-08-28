@@ -96,7 +96,7 @@ def render(vsboard):
 		x = (7-s%8)*tile_size+OUTLINE+1
 		y = (7-s//8)*tile_size+OUTLINE+1
 		rect = (x, y, tile_size, tile_size)
-		p = vsboard[s]
+		p = int(vsboard[s])
 		# draw square
 		if s == first_square:
 			pg.draw.rect(screen, MARKED, rect)
@@ -107,7 +107,7 @@ def render(vsboard):
 		elif not (s//8 + s%8 % 2 + 1) % 2:
 			pg.draw.rect(screen, BLACK, rect)
 		# draw figure
-		if p * vsboard[-1] == 6 and check:
+		if p * int(vsboard[-1]) == 6 and check:
 			pg.draw.rect(screen, PRE_MARKED, rect)
 		if p:
 			pim = pg.transform.scale(PiecePngs[p], (tile_size, tile_size))
@@ -127,7 +127,7 @@ def render(vsboard):
 	# turn
 	if check:
 		pg.draw.circle(screen, PRE_MARKED, (info_offset + info_size/2, y + tile_size/2), tile_size*.6)
-	p = pg.transform.scale(PiecePngs[6 * vsboard[-1]], (tile_size, tile_size))
+	p = pg.transform.scale(PiecePngs[6 * int(vsboard[-1])], (tile_size, tile_size))
 	screen.blit(p, (info_offset + info_size/2 - tile_size/2, y))
 	y+= p.get_height() + screen_size[1]*spacing
 	
@@ -138,21 +138,23 @@ def render(vsboard):
 	# 	screen.blit(t, (info_offset + info_size*.71, y + t.get_height()+screen_size[1]*spacing*.1))
 	# y+= p.get_height() + screen_size[1]*spacing
 
-	# # evaluation
-	# txt = str(game.cur_evaluation)
-	# if game.STATE in ["w", "b"]:
-	# 	txt = "- Schachmatt! -"
-	# elif game.STATE in ["d"]:
-	# 	txt = "- Patt! -"
-	# t = font2.render(txt, False, OUTLINE_COL)
-	# screen.blit(t, (info_offset + info_size/2 - t.get_width()/2, y))
-	# y+= t.get_height() + screen_size[1]*spacing
+	# evaluation
+	txt = vsboard[-3].replace('_', ' ')
+	txt = txt.replace(':', '\n')
+	txt = txt.replace(',', '\n')
+	if False:
+		txt = "- Schachmatt! -"
+	elif False:
+		txt = "- Patt! -"
+	t = font1.render(txt, False, OUTLINE_COL)
+	screen.blit(t, (info_offset + info_size/2 - t.get_width()/2, y))
+	y+= t.get_height() + screen_size[1]*spacing
 
 	# # move count
 	t = font2.render("ZÜGE", False, OUTLINE_COL)
 	screen.blit(t, (info_offset + info_size/2 - t.get_width()/2, y))
 	y+= t.get_height() + screen_size[1]*spacing*.1
-	t = font2.render(str(vsboard[-2]), False, OUTLINE_COL)
+	t = font2.render(vsboard[-2], False, OUTLINE_COL)
 	screen.blit(t, (info_offset + info_size/2 - t.get_width()/2, y))
 	y+= t.get_height() + screen_size[1]*spacing
 	
@@ -195,10 +197,8 @@ def send(cmd, value=""):
 	pipe.stdin.flush()
 	ans = read()
 	if ans != "ok":
-		if ans.endswith("ok"):
-			print(f"inf: {ans[:-2]}")
-		else:
-			raise Exception(f"error receving anser for {cmd}-{value}: {ans}")
+		if ans.endswith("ok"): pass #print(f"inf({cmd}): {ans[:-2]}")
+		else: raise Exception(f"error receving anser for {cmd}-{value}: {ans}")
 	return ans[:-2]
 	
 def get_visaul_move(x, y, vsboard):
@@ -209,7 +209,7 @@ def get_visaul_move(x, y, vsboard):
 	x = 7 - (x - OUTLINE) // tile_size
 	y = 7 - (y - OUTLINE) // tile_size
 	s = x + y*8
-	if vsboard[s] and s != first_square and vsboard[s] * vsboard[-1] > 0:
+	if int(vsboard[s]) and s != first_square and int(vsboard[s]) * int(vsboard[-1]) > 0:
 		first_square = s
 		send("inf", i_to_sq(s)).split()
 		mvs = read().split()
@@ -234,35 +234,41 @@ def get_visaul_move(x, y, vsboard):
 	first_square = None
 	targets = []
 
-	# inf = send("kim")
-	# last_move = (sq_to_i(inf[0:2]), sq_to_i(inf[2:4]))
-	# print("move evaluation: " + inf[4:])
+	inf = send("kim").split()
+	
+	last_move = inf.pop()
+	last_move = (sq_to_i(last_move[0:2]), sq_to_i(last_move[2:4]))
+
+	if inf:
+		if inf[0] == "check":
+			check = True
+			inf = inf[1:]
+		else:
+			check = False
+		pinned = list(map(lambda mv: sq_to_i(mv), inf))
+	else:
+		check = False
+		pinned = []
+	first_square = None
+	targets = []
 
 def main():
 	global pipe, hovering
 	pipe = Popen(['/Users/Jakob/Documents/C++/chess/chess'], stdout=PIPE, stdin=PIPE, stderr=STDOUT)
 	ans = read()
-	print(ans)
-	if ans != "rdy": raise Exception("engine is not ready")
+	if ans != "rdy": raise Exception("engine is not ready: " + ans)
 	atexit.register(end)
-
-	# fen = "r3k2r/ppp1pppp/8/6r1/8/2B5/P1P1P2P/R3K2R"
-	# if fen:
-	# 	if " " in fen:
-	# 		send("fen", fen)
-	# 	else:
-	# 		send("fen", fen+"_w_KQkq_-_0_1")
 
 	while True:
 		send("get")
-		b = list(map(int, read().split()))
-		render(b)
+		board = read().split()
+		render(board)
 		for event in pg.event.get():
 			if event.type == pg.QUIT:
 				return
 			elif event.type == pg.MOUSEBUTTONDOWN:
 				x,y = pg.mouse.get_pos()
-				get_visaul_move(x, y, b)
+				get_visaul_move(x, y, board)
 
 		x,y = pg.mouse.get_pos()
 		if (x > screen_size[1] - OUTLINE or x < OUTLINE or
@@ -281,9 +287,4 @@ def main():
 # g++ -o chess -w -O3 ./main.cpp; python3.10 /Users/Jakob/Documents/C++/chess/show_chess.py
 
 if __name__ == "__main__":
-	#main()
-	print(sq_to_i("e1"))
-	ROW_SIZE = 8
-	index = sq_to_i("e8")
-	print(index % ROW_SIZE + int(7 - index / ROW_SIZE) * ROW_SIZE)
-	print(i_to_sq( int(index % ROW_SIZE + (index / ROW_SIZE + ROW_SIZE-1) % ROW_SIZE * ROW_SIZE) ))
+	main()

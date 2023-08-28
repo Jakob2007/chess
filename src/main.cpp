@@ -1,4 +1,6 @@
+
 #include <iostream>
+#include <thread>
 
 #include "definitions.hpp"
 #include "board.hpp"
@@ -18,7 +20,7 @@ void show_timed_move(Board board, Sq sq) {
 			std::cout << "-";
 			break;
 		}
-		std::cout << board.pair_to_sq(board.i_to_pair(moves[i])) << ' ' << (int)moves[i] << ' ';
+		std::cout << pair_to_sq(i_to_pair(moves[i])) << ' ' << (int)moves[i] << ' ';
 	}
 	std::cout << std::endl;
 }
@@ -43,17 +45,17 @@ void test_fen(Board b, std::string fen, int* exp_moves) {
 			std::cout << "test failed: " << count << ' ';
 			int first = moves[i] >> 6;
 			int second = moves[i] & 63;
-			std::cout << "got: " << b.i_to_sq(first) << b.i_to_sq(second);
+			std::cout << "got: " << i_to_sq(first) << i_to_sq(second);
 			first = exp_moves[i] >> 6;
 			second = exp_moves[i] & 63;
-			std::cout << " exp: " << b.i_to_sq(first) << b.i_to_sq(second) << std::endl;
+			std::cout << " exp: " << i_to_sq(first) << i_to_sq(second) << std::endl;
 			// for (int i=0; i<count+1; i++) {
 			// 	std::cout << moves[i] << ", ";
 			// }
 			for (int i=0; i<count+1; i++) {
 				int first = moves[i] >> 6;
 				int second = moves[i] & 63;
-				std::cout << b.i_to_sq(first) << b.i_to_sq(second) << ", ";
+				std::cout << i_to_sq(first) << i_to_sq(second) << ", ";
 			}
 			break;
 		}
@@ -66,56 +68,38 @@ void test_fen(Board b, std::string fen, int* exp_moves) {
 
 int main() {
 	Board main_board;
+	Openings main_opening;
+
+	// while (main_opening.current_move_node != nullptr)
+	// {
+	// 	Sq move[2] = {0};
+	// 	std::string name;
+	// 	Start_time
+	// 	main_opening.next_move(move, &name);
+	// 	main_opening.push_move(move[0], move[1]);
+
+	// 	std::cout << "Opening: " << name  << ' ' << i_to_sq(move[0]) << i_to_sq(move[1]) << ' ' << End_time << std::endl;
+
+	// }
+
+	// return 0;
 
 	main_board.from_fen(BASIC_FEN);
-	main_board.from_fen("r1bqk2r/pppp1ppp/2n2n2/4p3/1b2P3/2NP4/PPP2PPP/R1BQKBNR w - - 0 1");
 
-	// main_board.show();
+	//main_board.from_fen("rnb1kbnr/pppppppp/6q1/8/4B3/5P2/PPPPP1PP/RNBQK1NR w - - 0 1");
 
 	// std::cout << main_board.evaluate();
 
-	
-	int moves[10] = {0};
-	int eval;
-	for (int i=0; i<10; i++) {
-		Start_time
-		std::cout << i << ' ';
-		eval = main_board.get_best_move_with_hist(i, moves);
-		for (int j=0; j<10; j++) std::cout << main_board.i_to_sq(moves[j]>>6) << main_board.i_to_sq(moves[j]&63) << '-';
-		std::cout << eval << End_time << std::endl;
-	}
-	
-	
+	// int move = 0;
+	// for (int i=0; i<10; i++) {
+	// 	Start_time
+	// 	std::cout << i << ' ';
+	// 	int move = main_board.get_best_move(i);
+	// 	std::cout << i_to_sq(move>>6) << i_to_sq(move&63) << ' ';
+	// 	std::cout << End_time << std::endl;
+	// }
 
-	/*
-	int move = 0;
-	int eval;
-	for (int i=0; i<10; i++) {
-		Start_time
-		std::cout << i << ' ';
-		eval = main_board.get_best_move(i, -WORST_CASE, WORST_CASE, &move);
-		std::cout << main_board.i_to_sq(move>>6) << main_board.i_to_sq(move&63) << ' ';
-		for (int j=0; j<10; j++) std::cout << main_board.i_to_sq(moves[j]>>6) << main_board.i_to_sq(moves[j]&63) << '-';
-		std::cout << eval << End_time << std::endl;
-	}
-	*/
-
-	/* raw
-	0 f3d5 995( 80942ns x11011 )
-	1 f3b3 993( 368373ns x2709 )
-	2 f3c3 994( 7727652ns x129 )
-	3 f3b3 993( 146830790ns x6 )
-	4 f3c3 995( 3250877710ns x0 )
-	*/
-	/* alpha beta
-	0 f3d5 995( 64983ns x13626 )
-	1 f3b3 993( 178601ns x5578 )
-	2 f3c3 994( 2180954ns x458 )
-	3 f3b3 993( 24846822ns x40 )
-	4 f3c3 995( 147938581ns x6 )
-	*/
-
-	// main_board.vsboard_loop();
+	main_board.vsboard_loop(&main_opening);
 	
 	std::cout << std::endl;
 
