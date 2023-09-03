@@ -25,7 +25,7 @@ struct Openings
 
 	Openings();
 
-	void next_move(Sq* dest, std::string* name);
+	bool next_move(Sq* dest, std::string* name);
 	
 	void push_move(Sq sq1, Sq sq2);
 

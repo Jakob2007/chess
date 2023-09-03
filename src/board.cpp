@@ -474,10 +474,10 @@ void Board::do_move(Sq sq1, Sq sq2) {
 	board[sq1] = 0;
 	board[sq2] = piece;
 
+	enpassant = LIST_END;
 	if (piece * is_white == PAWN) {
 		// update enpassant
 		if (sq2 == sq1 + is_white*8*2) enpassant = sq1 + is_white*8;
-		else enpassant = LIST_END;
 		// check promotion
 		if (sq2/8 == 7 * !is_whites_turn) board[sq2] = QUEEN * is_white;
 	}
@@ -555,10 +555,10 @@ void Board::do_move(Sq sq1, Sq sq2, Openings* op) {
 	board[sq1] = 0;
 	board[sq2] = piece;
 
+	enpassant = LIST_END;
 	if (piece * is_white == PAWN) {
 		// update enpassant
 		if (sq2 == sq1 + is_white*8*2) enpassant = sq1 + is_white*8;
-		else enpassant = LIST_END;
 		// check promotion
 		if (sq2/8 == 7 * !is_whites_turn) board[sq2] = QUEEN * is_white;
 	}
@@ -767,8 +767,9 @@ Move Board::get_best_move(int depth, Openings* op) {
 	if (op->current_move_node != nullptr) {
 		Sq move[2] = {0};
 		std::string name;
-		op->next_move(move, &name);
-		return get_move_from_sqs(move[0], move[1]);
+		if (op->next_move(move, &name)) {
+			return get_move_from_sqs(move[0], move[1]);
+		}
 	}
 
 	// Seed the random number generator with a time-based seed
@@ -892,23 +893,15 @@ void Board::vsboard_loop(Openings* op) {
 			Sq moves[MAX_MOVES];
 			legal_moves_from(sq_to_i(body), moves, board[sq_to_i(body)] > 0 ? 1 : -1);
 
-			std::cout << "ok" << std::endl;
-
 			for (Sq i=0; i<MAX_MOVES; i++) {
 				if (moves[i] == LIST_END) break;
 				else if (moves[i] == INTERRUPT_VAL) continue;
 				std::cout << i_to_sq(moves[i]) << ' ';
 			}
-			std::cout << std::endl;
+			std::cout << "ok" << std::endl;
 		}
 		else if (head == "act") {
 			do_move(sq_to_i(body.substr(0, 2)), sq_to_i(body.substr(2, 2)), op);
-			int moves[MAX_MOVES_BOARD];
-			int p_moves = all_legal_moves(moves, is_whites_turn ? 1 : -1);
-			if (p_moves == 0) {
-				if (check_preventing[0] == LIST_END) std::cout << " stalemate!";
-				else std::cout << " mate!";
-			}
 			std::cout << "ok" << std::endl;
 		}
 		else if (head == "get") {			
@@ -921,10 +914,40 @@ void Board::vsboard_loop(Openings* op) {
 			std::cout << full_move_count << ' ' << (is_whites_turn ? 1 : -1);
 			std::cout << std::endl;
 		}
+		else if (head == "evl") {
+			if (op->current_move_node) std::cout << op->current_move_node->current_name << '.';
+			else std::cout << evaluate() << '.';
+
+			int moves[MAX_MOVES_BOARD];
+			int p_moves = all_legal_moves(moves, is_whites_turn ? 1 : -1);
+			
+			std::string text = "ongoing";
+			if (!p_moves) {
+				if (check_preventing[0] == LIST_END) text = "stalemate";
+				else text = "mate";
+			}
+			else if (check_preventing[0] != LIST_END)  {
+				text = "check";
+			}
+			std::cout << text << '.';
+
+			for (int i=0; i<7; i++) {
+				if (check_preventing[i] == LIST_END) break;
+				std::cout << i_to_sq(check_preventing[i]) << ' ';
+			}
+			std::cout << '.';
+
+			for (int i=0; i<BOARD_SIZE; i++) {
+				if (pins[i][0] || pins[i][1]) {
+					std::cout << i_to_sq(i) << ' ';
+				}
+			}
+			std::cout << "ok" << std::endl;
+		}
 		else if (head == "kim") {
 			int move = get_best_move(KI_DEPTH, op);
-			do_move(get_sqs_from_move(move), op);
-			std::cout << i_to_sq(move>>6) << i_to_sq(move&63) <<  ' ';
+			// do_move(get_sqs_from_move(move), op);
+			std::cout << i_to_sq(move>>6) << i_to_sq(move&63);
 			std::cout << "ok" << std::endl;
 		}
 		else {

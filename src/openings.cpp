@@ -54,11 +54,15 @@ Openings::Openings() {
 	}
 }
 
-void Openings::next_move(Sq* dest, std::string* name) {
+bool Openings::next_move(Sq* dest, std::string* name) {
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	
 	int size = current_move_node->next_possible_sqs.size();
+	if (size == 0) {
+		return false;
+	}
+
 	std::uniform_int_distribution<int> d1(0, size-1);
 	Sq first = current_move_node->next_possible_sqs[d1(gen)];
 	Node* node1 = current_move_node->continuations[first];
@@ -70,17 +74,19 @@ void Openings::next_move(Sq* dest, std::string* name) {
 	*name = node1->current_name;
 	dest[0] = first;
 	dest[1] = second;
+	return true;
 }
 
 void Openings::push_move(Sq sq1, Sq sq2) {
 	if (!current_move_node) return;
 	
 	Node* node1 = current_move_node->continuations[sq1];
+	
 	if (!node1) {
 		current_move_node = nullptr;
 		return;
 	}
-
+	
 	current_move_node = node1->continuations[sq2];
 }
 

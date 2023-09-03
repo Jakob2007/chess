@@ -16,3 +16,4 @@ test.cpp
 test
 
 **/*.log
+logs
