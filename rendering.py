@@ -200,6 +200,7 @@ def show(game):
 		x = (x - OUTLINE) // tile_size
 		y = 7 - (y - OUTLINE) // tile_size
 		game.hovered_square = x + y*8
+	else: game.hovered_square = None
 
 	for event in pg.event.get():
 		if event.type == pg.QUIT:

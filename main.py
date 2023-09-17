@@ -108,7 +108,7 @@ def main():
 			file.write(f"{game.state}\n")
 			for i, mv in enumerate(game.board.move_stack):
 				if (i+1)%2:
-					file.write(f"{i//2+1}. {mv.uci()}\t\t")
+					file.write(f"{i//2+1}. {mv.uci()} \t")
 				else:
 					file.write(f"{mv.uci()}\n")
 

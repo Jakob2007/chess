@@ -87,11 +87,17 @@ struct Board {
 
 	void do_move(Sq sq1, Sq sq2, Openings* op);
 
+	int evaluate_move(Move mv);
+
+	void sort_moves(int* moves, int n_moves);
+
+	bool is_important_move(Move mv);
+
 	int evaluate();
 
 	int get_best_move_with_hist(int depth, int* root_move_hist);
 
-	int minimax(int depth, int alpha, int beta);
+	int minimax(int depth, int alpha, int beta, int deepening);
 
 	int get_best_move(int depth, Openings* op);
 

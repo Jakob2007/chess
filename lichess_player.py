@@ -54,7 +54,7 @@ class Lichess_player:
 		self.game = game
 
 		opt = webdriver.FirefoxOptions()
-		opt.add_argument('--headless')
+		#opt.add_argument('--headless')
 		self.driver = webdriver.Firefox(options=opt)
 		self.driver.get("https://lichess.org")
 
@@ -64,7 +64,6 @@ class Lichess_player:
 		while not (container := self.driver.find_elements(By.TAG_NAME, "cg-container")): time.sleep(1)
 
 		self.name = name[0].text
-		self.name = f"Lichess-{self.name}"
 		print(f"found game {game.li_time}+{game.li_incr} vs {self.name}")
 
 		self.canvas = int(container[0].get_attribute("style").split(' ')[-1][:-3])
@@ -74,7 +73,7 @@ class Lichess_player:
 		while not self.driver.find_elements(By.TAG_NAME, "l4x"): time.sleep(.1)
 		
 		request = lambda: self.driver.find_element(By.TAG_NAME, "l4x").find_elements(By.TAG_NAME, "kwdb")
-		while self.game.running and len(moves := request()) % 2 == (self.col-1)*-1:
+		while self.game.running and len(moves := request()) % 2 != self.col:
 			if not self.driver.find_elements(By.XPATH, "//div[contains(@class, 'user-link') and contains(@class, 'online')]"):
 				return None
 			if self.driver.find_elements(By.CLASS_NAME, 'time'):
@@ -97,12 +96,22 @@ class Lichess_player:
 		time.sleep(random.uniform(.3, .7))
 
 	def push_move(self, mv):
-		time.sleep(.1)
-		pos = mv.from_square % 8, mv.from_square // 8
-		self.click_square(*pos)
+		if not self.driver.find_elements(By.TAG_NAME, "l4x"):
+			time.sleep(.1)
+			pos = mv.from_square % 8, mv.from_square // 8
+			self.click_square(*pos)
 
-		pos = mv.to_square % 8, mv.to_square // 8
-		self.click_square(*pos)
+			pos = mv.to_square % 8, mv.to_square // 8
+			self.click_square(*pos)
+		else:
+			request = lambda: self.driver.find_element(By.TAG_NAME, "l4x").find_elements(By.TAG_NAME, "kwdb")
+			while self.game.running and len(request()) % 2 == self.col:
+				time.sleep(.1)
+				pos = mv.from_square % 8, mv.from_square // 8
+				self.click_square(*pos)
+
+				pos = mv.to_square % 8, mv.to_square // 8
+				self.click_square(*pos)
 
 	def quit(self):
 		if self.driver.find_elements(By.CLASS_NAME, "resign"):

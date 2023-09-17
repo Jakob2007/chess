@@ -4,7 +4,9 @@
 
 #include <chrono>
 
-#define KI_DEPTH 5
+#define KI_DEPTH 2
+#define AI_DEEPENING 3
+#define PIECE_VAL_AMP 40
 
 #define PAWN 1
 #define ROOK 2

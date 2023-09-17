@@ -86,15 +86,17 @@ int main() {
 
 	main_board.from_fen(BASIC_FEN);
 
-	//main_board.from_fen("rnb1kbnr/pppppppp/6q1/8/4B3/5P2/PPPPP1PP/RNBQK1NR w - - 0 1");
+	// main_board.from_fen("r3k1r1/ppp2p2/b1nq1n1p/3pp1b1/4P3/1PNPBN2/P1P1BPPP/R2QK2R w - - 0 1");
 
 	// std::cout << main_board.evaluate();
 
+	main_opening.current_move_node = nullptr;
+
 	// int move = 0;
-	// for (int i=0; i<10; i++) {
+	// for (int i=0; i<6; i++) {
 	// 	Start_time
 	// 	std::cout << i << ' ';
-	// 	int move = main_board.get_best_move(i);
+	// 	int move = main_board.get_best_move(i, &main_opening);
 	// 	std::cout << i_to_sq(move>>6) << i_to_sq(move&63) << ' ';
 	// 	std::cout << End_time << std::endl;
 	// }
