@@ -99,7 +99,7 @@ struct Board {
 
 	int minimax(int depth, int alpha, int beta, int deepening);
 
-	int get_best_move(int depth, Openings* op);
+	int get_best_move(int depth, int deepening, Openings* op);
 
 	void show();
 

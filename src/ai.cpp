@@ -18,12 +18,12 @@ int Board::evaluate_move(Move mv) {
 
 	if (p > 0) {
 		eval+= value[-cp] * PIECE_VAL_AMP;
-		eval+= SQUARE_TABLES[p-1][63-sq1] - SQUARE_TABLES[p-1][63-sq2];
+		//eval+= SQUARE_TABLES[p-1][63-sq1] - SQUARE_TABLES[p-1][63-sq2]; // to inefficient probably because of cache locality
 		if (cp) eval+= SQUARE_TABLES[(-cp)-1][mirror_sq(63-sq2)];
 	}
 	else {
 		eval+= value[cp] * PIECE_VAL_AMP;
-		eval+= SQUARE_TABLES[(-p)-1][mirror_sq(63-sq1)] - SQUARE_TABLES[(-p)-1][mirror_sq(63-sq2)];
+		//eval+= SQUARE_TABLES[(-p)-1][mirror_sq(63-sq1)] - SQUARE_TABLES[(-p)-1][mirror_sq(63-sq2)]; // to inefficient
 		if (cp) eval+= SQUARE_TABLES[cp-1][63-sq2];
 	}
 	return eval;
@@ -53,7 +53,8 @@ void Board::sort_moves(int* moves, int n_moves) {
 bool Board::is_important_move(Move mv) {
 	Sq sq1 =  mv >> 6;
 	Sq sq2 = mv & 63;
-	if (board[sq2] && (board[sq1] != 1 || board[sq1] != -1)) return true;
+	// if (board[sq2] && (board[sq1] != 1 || board[sq1] != -1)) return true;
+	if (board[sq2] != 0) return true;
 	if (check_preventing[0] != LIST_END) return true;
 	return false;
 }
@@ -135,12 +136,13 @@ int Board::get_best_move_with_hist(int depth, Move* root_move_hist) {
 int Board::minimax(int depth, int alpha, int beta, int deepening) {	
 	Move moves[MAX_MOVES_BOARD] = {0};
 	int move_count = all_legal_moves(moves, is_whites_turn ? 1 : -1);
-	sort_moves(moves, move_count);
 
 	if (!move_count) {
 		if (check_preventing[0] == LIST_END) return 0;
 		else return is_whites_turn ? WORST_CASE : -WORST_CASE;
 	}
+
+	sort_moves(moves, move_count);
 
 	if (is_whites_turn) {
 		int best_val = WORST_CASE;
@@ -150,7 +152,8 @@ int Board::minimax(int depth, int alpha, int beta, int deepening) {
 
 			int val;
 			if (depth > 0) val = new_board.minimax(depth-1, alpha, beta, deepening) - 1;
-			//else if (new_board.is_important_move(moves[i]) && deepening > 0) val = new_board.minimax(0, alpha, beta, deepening-1) - 1;
+			else if (deepening > 0 && (is_important_move(moves[i]) || move_count <= 5)) val = new_board.minimax(0, alpha, beta, deepening-1) - 1;
+			else if (move_count <= 3) val = new_board.minimax(0, alpha, beta, deepening) - 1;
 			else val = new_board.evaluate();
 
 			if (val > best_val) {
@@ -173,7 +176,8 @@ int Board::minimax(int depth, int alpha, int beta, int deepening) {
 
 			int val;
 			if (depth > 0) val = new_board.minimax(depth-1, alpha, beta, deepening) + 1;
-			//else if (new_board.is_important_move(moves[i]) && deepening > 0) val = new_board.minimax(0, alpha, beta, deepening-1) + 1;
+			else if (deepening > 0 && (is_important_move(moves[i]) || move_count <= 5)) val = new_board.minimax(0, alpha, beta, deepening-1) + 1;
+			else if (move_count <= 3) val = new_board.minimax(0, alpha, beta, deepening) + 1;
 			else val = new_board.evaluate();
 
 			if (val < best_val) {
@@ -190,7 +194,7 @@ int Board::minimax(int depth, int alpha, int beta, int deepening) {
 	}
 }
 
-Move Board::get_best_move(int depth, Openings* op) {
+Move Board::get_best_move(int depth, int deepening, Openings* op) {
 	int alpha = WORST_CASE;
 	int beta = -WORST_CASE;
 
@@ -220,7 +224,7 @@ Move Board::get_best_move(int depth, Openings* op) {
 			new_board.do_move(get_sqs_from_move(moves[i]));
 
 			int val;
-			if (depth > 0) val = new_board.minimax(depth-1, alpha, beta, AI_DEEPENING) - 1;
+			if (depth > 0) val = new_board.minimax(depth-1, alpha, beta, deepening) - 1;
 			else val = new_board.evaluate();
 
 			if (val > best_val) {
@@ -247,7 +251,7 @@ Move Board::get_best_move(int depth, Openings* op) {
 			new_board.do_move(get_sqs_from_move(moves[i]));
 
 			int val;
-			if (depth > 0) val = new_board.minimax(depth-1, alpha, beta, AI_DEEPENING) + 1;
+			if (depth > 0) val = new_board.minimax(depth-1, alpha, beta, deepening) + 1;
 			else val = new_board.evaluate();
 
 			if (val < best_val) {

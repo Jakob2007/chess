@@ -5,7 +5,7 @@ from threading import Thread
 from datetime import datetime
 
 from ai import AI_handler, AI_player
-from board_player import Board_player
+from board_player import Board_player, Schrobot
 from computer_player import Computer_player
 from lichess_player import Lichess_player, Stockfish_player
 
@@ -64,24 +64,25 @@ class Game:
 		self.board = chess.Board()
 
 		self.AI = AI_handler()
+		self.schrobot = Schrobot()
         
 	def get_possible_moves(self, sq1):
 		self.move_dests = self.AI.get_possible_moves(sq1)
 
 	def do_move(self):
 		pl = self.player[ self.board.turn ]
-		print(f"waiting for {pl.name}", end=" ")
+		print(f"waiting for {pl.name}")
 		mv = pl.await_move()
 		if not mv:
 			self.running = False
 			return
-		print(mv.uci())
-		print('')
+		print(f'\033[F \033[K{mv.uci()}')
 
 		self.board.push(mv)
 		self.last_move = mv
 
 		self.AI.push(mv.uci())
+		self.schrobot.push(mv.from_square, mv.to_square, self.board.piece_at(mv.from_square))
 		self.player[ self.board.turn ].push_move(mv)
 
 		self.AI.get_evaluation(self)

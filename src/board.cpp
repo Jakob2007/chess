@@ -736,7 +736,9 @@ void Board::vsboard_loop(Openings* op) {
 			std::cout << "ok" << std::endl;
 		}
 		else if (head == "kim") {
-			int move = get_best_move(KI_DEPTH, op);
+			// Start_time
+			int move = get_best_move(KI_DEPTH, AI_DEEPENING, op);
+			// std::cout << End_time << std::endl;
 			// do_move(get_sqs_from_move(move), op);
 			std::cout << i_to_sq(move>>6) << i_to_sq(move&63);
 			std::cout << "ok" << std::endl;

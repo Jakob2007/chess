@@ -4,7 +4,7 @@
 
 #include <chrono>
 
-#define KI_DEPTH 2
+#define KI_DEPTH 5
 #define AI_DEEPENING 3
 #define PIECE_VAL_AMP 40
 

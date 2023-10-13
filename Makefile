@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -w -O3
+CFLAGS = -w -O3 -g
 SRC_DIR = src
 OBJ_DIR = obj
 
